@@ -58,6 +58,7 @@ class ConfiguratorFootprintPlotter(object):
                  time_slider: bool=False,
                  num_quantiles: int=10,
                  configs_in_run: dict=None,
+                 estimator='rf'
                  ):
         '''
         Constructor
@@ -81,6 +82,8 @@ class ConfiguratorFootprintPlotter(object):
             INCREASES FILE-SIZE DRAMATICALLY
         num_quantiles: int
             number of quantiles for the slider/ number of static pictures
+        estimator: str
+            from [rf, kde]
         '''
         self.logger = logging.getLogger(self.__module__ + '.' + self.__class__.__name__)
 
@@ -93,6 +96,7 @@ class ConfiguratorFootprintPlotter(object):
         self.contour_step_size = contour_step_size
         self.output_dir = output_dir
         self.configs_in_run = configs_in_run if configs_in_run else {'all' : self.orig_rh.get_all_configs()}
+        self.estimator = estimator
 
     def run(self):
         """
@@ -170,14 +174,16 @@ class ConfiguratorFootprintPlotter(object):
         X_trans = np.array(X_trans)
 
         self.logger.debug("Train random forest for contour-plot.")
-        bounds = np.array([(0, np.nan), (0, np.nan)], dtype=object)
-        model = RandomForestWithInstances(types=types, bounds=bounds,
-                                          instance_features=np.array(scen.feature_array),
-                                          ratio_features=1.0)
-
-        start = time.time()
-        model.train(X_trans, y)
-        self.logger.debug("Fitting random forest took %f time", time.time() - start)
+        if self.estimator == 'rf':
+            bounds = np.array([(0, np.nan), (0, np.nan)], dtype=object)
+            model = RandomForestWithInstances(types=types, bounds=bounds,
+                                              instance_features=np.array(scen.feature_array),
+                                              ratio_features=1.0)
+            start = time.time()
+            model.train(X_trans, y)
+            self.logger.debug("Fitting random forest took %f time", time.time() - start)
+        elif self.estimator == 'kde':
+            from hpbandster.optimizers.kde.mvkde import MultivariateKDE
 
         x_min, x_max = X_scaled[:, 0].min() - 1, X_scaled[:, 0].max() + 1
         y_min, y_max = X_scaled[:, 1].min() - 1, X_scaled[:, 1].max() + 1
