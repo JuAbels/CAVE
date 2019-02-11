@@ -3,7 +3,7 @@ import numpy as np
 import logging
 
 from ConfigSpace.configuration_space import Configuration
-from smac.runhistory.runhistory import RunHistory, RunKey
+from smac.runhistory.runhistory import RunHistory, RunKey, DataOrigin
 from smac.optimizer.objective import average_cost
 
 # TODO Possibly inconsistent: median over timeouts is timeout, but mean over
@@ -133,6 +133,8 @@ def combine_runhistories(rhs, logger=None):
             try:
                 k, v = rh_to_runs[rh][idx]
                 combi_rh.add(rh.ids_config[k.config_id], v.cost, v.time, v.status, k.instance_id, k.seed, v.additional_info)
+                if k.seed != 0:
+                    print("Seed:", k.seed)
             except IndexError:
                 rh_to_runs.pop(rh)
         idx += 1
@@ -140,6 +142,40 @@ def combine_runhistories(rhs, logger=None):
         logger.debug("number of elements in individual rhs: " + str({k : len(v) for k, v in rh_to_runs}))
         logger.debug("number of elements in combined rh: " + str(len(combi_rh.data)))
     return combi_rh
+
+def create_random_runhistories(rhs):
+    """Create runhistory on the basis of random points of SMAC. Use dict self.data and origin of
+    configspace to filter random points.
+
+    Parameter
+    ---------
+    rhs: RunHistory
+        combined runhistory of all SMAC results
+
+    Returns
+    -------
+    random_rh: RunHistory
+        Runhistory of all points from SMAC that were set randomly.
+    local_rh: RunHistory
+        Runhistory of all points from SMAC that were set in a local region to research
+        a specific area or unknow.
+    """
+    random_rh = RunHistory(average_cost)  # create Runhistory Object for random Configurations
+    local_rh = RunHistory(average_cost)
+
+    # Iterate above runhistory data and add random configurations in random_rh
+    for objects in rhs.data:
+        conf = get_config_origin(rhs.ids_config[objects[0]])
+        if conf == 'Random':
+            random_rh.add(rhs.ids_config[objects[0]], rhs.data[objects][0], rhs.data[objects][1],
+                          rhs.data[objects][2], objects[1], objects[2], rhs.data[objects][3],
+                          rhs.external[objects])
+        elif conf == 'Acquisition Function' or conf == 'Unknown':
+            local_rh.add(rhs.ids_config[objects[0]], rhs.data[objects][0], rhs.data[objects][1],
+                         rhs.data[objects][2], objects[1], objects[2], rhs.data[objects][3],
+                         rhs.external[objects])
+    assert(len(random_rh.data) == len(local_rh.data))
+    return random_rh, local_rh
 
 class NotApplicableError(Exception):
     """Exception indicating that this analysis-method cannot be performed."""

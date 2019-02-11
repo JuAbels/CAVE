@@ -41,6 +41,7 @@ from ConfigSpace import CategoricalHyperparameter
 
 from cave.utils.convert_for_epm import convert_data_for_epm
 from cave.utils.helpers import escape_parameter_name, get_config_origin, combine_runhistories
+from cave.utils.helpers import create_random_runhistories  # Julia BA
 from cave.utils.timing import timing
 from cave.utils.io import export_bokeh
 from cave.utils.bokeh_routines import get_checkbox, get_radiobuttongroup
@@ -96,7 +97,8 @@ class ConfiguratorFootprintPlotter(object):
 
         self.scenario = scenario
         self.rhs = rhs
-        self.combined_rh = combine_runhistories(self.rhs)
+        self.combined_rh = combine_runhistories(self.rhs)  # TODO: BA Julia
+        self.random_rh, self.local_rh = create_random_runhistories(self.combined_rh)  # Julia BA -> need for get_mds
         self.incs = incs
         self.rh_labels = rh_labels if rh_labels else [str(idx) for idx in range(len(self.rhs))]
         self.max_plot = max_plot
@@ -119,21 +121,28 @@ class ConfiguratorFootprintPlotter(object):
         """
         default = self.scenario.cs.get_default_configuration()
         self.combined_rh = self.reduce_runhistory(self.combined_rh, self.max_plot, keep=[a for b in self.incs for a in b]+[default])
+
+        # conf_list: List of Configurations with values for diff indexes of the confi
+        # conf_matrix: row is values of confi
+        # Modification of Julia
         conf_matrix, conf_list, runs_per_quantile, timeslider_labels = self.get_conf_matrix(self.combined_rh, self.incs)
         self.logger.debug("Number of Configurations: %d", conf_matrix.shape[0])
-        dists = self.get_distance(conf_matrix, self.scenario.cs)
-        red_dists = self.get_mds(dists)
+
+        # dists: matrix, row is config to all other config in N dimensional
+        dists = self.get_distance(conf_matrix, self.scenario.cs)  # use here random_rh to create dists of ranodm confi first
+        red_dists = self.get_mds(dists)  # dists of all confis in 2 dim, HERE MDS call
 
         contour_data = {}
-        contour_data['combined'] = self.get_pred_surface(self.combined_rh, X_scaled=red_dists,
+        contour_data['combined'] = self.get_pred_surface(self.combined_rh, X_scaled=red_dists,  # Here call with X, y
                                                          conf_list=copy.deepcopy(conf_list),
                                                          contour_step_size=self.contour_step_size)
+
         for label, rh in zip(self.rh_labels, self.rhs):
             contour_data[label] = self.get_pred_surface(rh, X_scaled=red_dists,
                                                         conf_list=copy.deepcopy(conf_list),
                                                         contour_step_size=self.contour_step_size)
 
-        return self.plot(red_dists,
+        return self.plot(red_dists,  # Coordiantes of 2D Configurations
                          conf_list,
                          runs_per_quantile,
                          inc_list=self.incs,
@@ -178,7 +187,10 @@ class ConfiguratorFootprintPlotter(object):
 
         # convert the data to train EPM on 2-dim featurespace (for contour-data)
         self.logger.debug("Convert data for epm.")
-        X, y, types = convert_data_for_epm(scenario=scen, runhistory=rh, logger=self.logger)
+
+        # X: matrix, input dimension -> so dim n, X matrix with configuartion x features for all observed samples
+        # y: vector, y matrix with all observations
+        X, y, types = convert_data_for_epm(scenario=scen, runhistory=rh, logger=self.logger)  # TODO: BA Julia
         types = np.array(np.zeros((2 + scen.feature_array.shape[1])), dtype=np.uint)
         num_params = len(scen.cs.get_hyperparameters())
 
@@ -310,6 +322,7 @@ class ConfiguratorFootprintPlotter(object):
         np.array
             scaled coordinates in 2-dim room
         """
+        # TODO: Here for BA Julia
         # TODO there are ways to extend MDS to provide a transform-method. if
         #   available, train on randomly sampled configs and plot all
         # TODO MDS provides 'n_jobs'-argument for parallel computing...
@@ -389,7 +402,9 @@ class ConfiguratorFootprintPlotter(object):
         """
         conf_list = []
         conf_matrix = []
+        # conf_matrix_local = []
         # Get all configurations. Index of c in conf_list serves as identifier
+
         for c in rh.get_all_configs():
             if c not in conf_list:
                 conf_matrix.append(c.get_array())

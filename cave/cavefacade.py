@@ -181,6 +181,7 @@ class CAVE(object):
         self.output_dir = output_dir
         self.set_verbosity(verbose_level.upper())
         self.logger.debug("Running CAVE version %s", v)
+        self.logger.info("TEST JULES new Implementation")  # TEST For BA
         self.show_jupyter = show_jupyter
         if self.show_jupyter:
             # Reset logging module
