@@ -174,7 +174,7 @@ def create_random_runhistories(rhs):
             local_rh.add(rhs.ids_config[objects[0]], rhs.data[objects][0], rhs.data[objects][1],
                          rhs.data[objects][2], objects[1], objects[2], rhs.data[objects][3],
                          rhs.external[objects])
-    assert(len(random_rh.data) == len(local_rh.data))
+    assert(len(random_rh.data) + len(local_rh.data) == len(rhs.data))
     return random_rh, local_rh
 
 class NotApplicableError(Exception):

@@ -44,6 +44,7 @@ from cave.utils.helpers import escape_parameter_name, get_config_origin, combine
 from cave.utils.helpers import create_random_runhistories  # Julia BA
 from cave.utils.timing import timing
 from cave.utils.io import export_bokeh
+from cave.plot.mds import MDS_New
 from cave.utils.bokeh_routines import get_checkbox, get_radiobuttongroup
 
 
@@ -124,8 +125,8 @@ class ConfiguratorFootprintPlotter(object):
 
         # conf_list: List of Configurations with values for diff indexes of the confi
         # conf_matrix: row is values of confi
-        # Modification of Julia
         conf_matrix, conf_list, runs_per_quantile, timeslider_labels = self.get_conf_matrix(self.combined_rh, self.incs)
+        conf_matrix_random, conf_matrix_local = self.get_conf_matrix_random_local(self.random_rh, self.local_rh, self.incs) # list_for_configuration)
         self.logger.debug("Number of Configurations: %d", conf_matrix.shape[0])
 
         # dists: matrix, row is config to all other config in N dimensional
@@ -327,9 +328,14 @@ class ConfiguratorFootprintPlotter(object):
         #   available, train on randomly sampled configs and plot all
         # TODO MDS provides 'n_jobs'-argument for parallel computing...
         mds = MDS(n_components=2, dissimilarity="precomputed", random_state=12345)
+        testdist = copy.deepcopy(dists)
         dists = mds.fit_transform(dists)
         self.logger.debug("MDS-stress: %f", mds.stress_)
-        return dists
+
+        test = MDS_New(n_components=2, dissimilarity="precomputed", random_state=12345)
+        distances = test.fit_transform(testdist)
+
+        return distances
 
     def reduce_runhistory(self,
                           rh: RunHistory,
@@ -402,7 +408,6 @@ class ConfiguratorFootprintPlotter(object):
         """
         conf_list = []
         conf_matrix = []
-        # conf_matrix_local = []
         # Get all configurations. Index of c in conf_list serves as identifier
 
         for c in rh.get_all_configs():
@@ -435,6 +440,34 @@ class ConfiguratorFootprintPlotter(object):
 
         runs_per_quantile = np.array([np.array(run) for run in runs_per_quantile])
         return np.array(conf_matrix), np.array(conf_list), runs_per_quantile, labels
+
+    @timing
+    def get_conf_matrix_random_local(self, rh_radom, rh_local, incs):
+        """Returns the matrix of random_rh and local_rh."""
+        conf_list = []
+        conf_matrix_random = []
+        conf_matrix_local = []
+
+        for c in rh_radom.get_all_configs():
+            if c not in conf_list:
+                conf_matrix_random.append(c.get_array())
+                conf_list.append(c)
+
+        for c in rh_local.get_all_configs():
+            if c not in conf_list:
+                conf_matrix_local.append(c.get_array())
+                conf_list.append(c)
+
+        for inc in [a for b in incs for a in b]:
+            if inc not in conf_list:
+                if get_config_origin(inc) == 'Random':
+                    conf_matrix_random.append(inc.get_array())
+                elif get_config_origin(inc) == 'Acquisition Function' or get_config_origin(inc) == 'Unknown':
+                    conf_matrix_local.append(inc.get_array())
+                conf_list.append(inc)
+
+        assert(len(conf_matrix_local) + len(conf_matrix_random) == len(conf_list))
+        return np.array(conf_matrix_random), np.array(conf_matrix_local)
 
     @timing
     def _get_runs_per_config_quantiled(self, rh, conf_list, quantiles):
