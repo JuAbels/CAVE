@@ -131,7 +131,9 @@ class ConfiguratorFootprintPlotter(object):
 
         # dists: matrix, row is config to all other config in N dimensional
         dists = self.get_distance(conf_matrix, self.scenario.cs)  # use here random_rh to create dists of ranodm confi first
-        red_dists = self.get_mds(dists)  # dists of all confis in 2 dim, HERE MDS call
+        random_dists = self.get_distance(conf_matrix_random, self.scenario.cs)
+        local_dists = self.get_distance(conf_matrix_local, self.scenario.cs)
+        red_dists = self.get_mds(dists, random_dists, conf_matrix_random, conf_matrix, self.local_rh)  # dists of all confis in 2 dim, HERE MDS call
 
         contour_data = {}
         contour_data['combined'] = self.get_pred_surface(self.combined_rh, X_scaled=red_dists,  # Here call with X, y
@@ -309,7 +311,7 @@ class ConfiguratorFootprintPlotter(object):
                     return d
 
     @timing
-    def get_mds(self, dists):
+    def get_mds(self, dists, random_dists, random_config, conf_matrix, rhs):
         """
         Compute multi-dimensional scaling (using sklearn MDS) -- nonlinear scaling
 
@@ -327,15 +329,17 @@ class ConfiguratorFootprintPlotter(object):
         # TODO there are ways to extend MDS to provide a transform-method. if
         #   available, train on randomly sampled configs and plot all
         # TODO MDS provides 'n_jobs'-argument for parallel computing...
-        mds = MDS(n_components=2, dissimilarity="precomputed", random_state=12345)
-        testdist = copy.deepcopy(dists)
-        dists = mds.fit_transform(dists)
+        # mds = MDS(n_components=2, dissimilarity="precomputed", random_state=12345)
+        # dists = mds.fit_transform(dists)
+
+        mds = MDS_New(n_components=2, dissimilarity="precomputed", random_state=12345)
+        distances = mds.fit(random_dists)
+        test = mds.transform(dists, random_config, conf_matrix, rhs)
+
+        # dists = mds.fit_transform(dists)  # train with random confis
         self.logger.debug("MDS-stress: %f", mds.stress_)
 
-        test = MDS_New(n_components=2, dissimilarity="precomputed", random_state=12345)
-        distances = test.fit_transform(testdist)
-
-        return distances
+        return test
 
     def reduce_runhistory(self,
                           rh: RunHistory,

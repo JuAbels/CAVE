@@ -170,7 +170,7 @@ def create_random_runhistories(rhs):
             random_rh.add(rhs.ids_config[objects[0]], rhs.data[objects][0], rhs.data[objects][1],
                           rhs.data[objects][2], objects[1], objects[2], rhs.data[objects][3],
                           rhs.external[objects])
-        elif conf == 'Acquisition Function' or conf == 'Unknown':
+        else:
             local_rh.add(rhs.ids_config[objects[0]], rhs.data[objects][0], rhs.data[objects][1],
                          rhs.data[objects][2], objects[1], objects[2], rhs.data[objects][3],
                          rhs.external[objects])
