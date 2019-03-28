@@ -143,6 +143,23 @@ def combine_runhistories(rhs, logger=None):
         logger.debug("number of elements in combined rh: " + str(len(combi_rh.data)))
     return combi_rh
 
+def combine_random_local(rhs_random, rhs_local, logger=None):
+    """Helpfunction to combine random and local runhistory to one"""
+    combi_rh = rhs_random
+
+    for new_configuration in rhs_local.data:
+        combi_rh.add(rhs_local.ids_config[new_configuration[0]], rhs_local.data[new_configuration][0],
+                     rhs_local.data[new_configuration][1], rhs_local.data[new_configuration][2],
+                     new_configuration[1], new_configuration[2], rhs_local.data[new_configuration][3],
+                     rhs_local.external[new_configuration])
+
+    if logger:
+        logger.debug("Combined Runhistory was created.")
+
+    return combi_rh
+
+
+
 def create_random_runhistories(rhs):
     """Create runhistory on the basis of random points of SMAC. Use dict self.data and origin of
     configspace to filter random points.

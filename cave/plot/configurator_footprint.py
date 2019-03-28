@@ -40,10 +40,11 @@ from ConfigSpace import CategoricalHyperparameter
 
 from cave.utils.convert_for_epm import convert_data_for_epm
 from cave.utils.helpers import escape_parameter_name, get_config_origin, combine_runhistories
-from cave.utils.helpers import create_random_runhistories  # Julia BA
+from cave.utils.helpers import create_random_runhistories, combine_random_local  # Julia BA
 from cave.utils.timing import timing
 from cave.utils.io import export_bokeh
 from cave.plot.mds import MDS_New
+
 from cave.utils.bokeh_routines import get_checkbox, get_radiobuttongroup
 
 
@@ -97,8 +98,9 @@ class ConfiguratorFootprintPlotter(object):
 
         self.scenario = scenario
         self.rhs = rhs
-        self.combined_rh = combine_runhistories(self.rhs)  # TODO: BA Julia
-        self.random_rh, self.local_rh = create_random_runhistories(self.combined_rh)  # Julia BA -> need for get_mds
+        self.combined_rh_ = combine_runhistories(self.rhs)  # TODO: BA Julia
+        self.random_rh, self.local_rh = create_random_runhistories(self.combined_rh_)  # Julia BA -> need for get_mds
+        self.combined_rh = combine_random_local(self.random_rh, self.local_rh, self.logger)
         self.incs = incs
         self.rh_labels = rh_labels if rh_labels else [str(idx) for idx in range(len(self.rhs))]
         self.max_plot = max_plot
@@ -120,29 +122,40 @@ class ConfiguratorFootprintPlotter(object):
         data and plot the configurator footprint.
         """
         default = self.scenario.cs.get_default_configuration()
-        self.combined_rh = self.reduce_runhistory(self.combined_rh, self.max_plot, keep=[a for b in self.incs for a in b]+[default])
+
+        self.combined_rh = self.reduce_runhistory(self.combined_rh_, self.max_plot, keep=[a for b in self.incs for a in b]+[default])
 
         # conf_list: List of Configurations with values for diff indexes of the confi
         # conf_matrix: row is values of confi
         conf_matrix, conf_list, runs_per_quantile, timeslider_labels = self.get_conf_matrix(self.combined_rh, self.incs)
+
+        print("First", len(copy.deepcopy(conf_list)))
+
         conf_matrix_random, conf_matrix_local = self.get_conf_matrix_random_local(self.random_rh, self.local_rh, self.incs) # list_for_configuration)
         self.logger.debug("Number of Configurations: %d", conf_matrix.shape[0])
 
         # dists: matrix, row is config to all other config in N dimensional
-        dists = self.get_distance(conf_matrix, self.scenario.cs)  # use here random_rh to create dists of ranodm confi first
+        dists = self.get_distance(conf_matrix, self.scenario.cs)
         random_dists = self.get_distance(conf_matrix_random, self.scenario.cs)
-        local_dists = self.get_distance(conf_matrix_local, self.scenario.cs)
-        red_dists = self.get_mds(dists, random_dists, conf_matrix_random, conf_matrix, self.local_rh)  # dists of all confis in 2 dim, HERE MDS call
+        train_new_dists = self.get_distance_two(conf_matrix_random, conf_matrix_local, self.scenario.cs)
+        red_dists = self.get_mds(random_dists, train_new_dists, dists)
+
+        #new_rh = combine_random_local(self.random_rh, self.local_rh)
 
         contour_data = {}
+
+        print("Second", len(copy.deepcopy(conf_list)))
         contour_data['combined'] = self.get_pred_surface(self.combined_rh, X_scaled=red_dists,  # Here call with X, y
                                                          conf_list=copy.deepcopy(conf_list),
                                                          contour_step_size=self.contour_step_size)
 
         for label, rh in zip(self.rh_labels, self.rhs):
+            print("Third", len(copy.deepcopy(conf_list)))
             contour_data[label] = self.get_pred_surface(rh, X_scaled=red_dists,
                                                         conf_list=copy.deepcopy(conf_list),
                                                         contour_step_size=self.contour_step_size)
+
+        print("Finished label rh")
 
         return self.plot(red_dists,  # Coordiantes of 2D Configurations
                          conf_list,
@@ -192,7 +205,10 @@ class ConfiguratorFootprintPlotter(object):
 
         # X: matrix, input dimension -> so dim n, X matrix with configuartion x features for all observed samples
         # y: vector, y matrix with all observations
-        X, y, types = convert_data_for_epm(scenario=scen, runhistory=rh, logger=self.logger)  # TODO: BA Julia
+        X, y, types = convert_data_for_epm(scenario=scen, runhistory=rh, logger=self.logger)
+
+        print(X)
+
         types = np.array(np.zeros((2 + scen.feature_array.shape[1])), dtype=np.uint)
         num_params = len(scen.cs.get_hyperparameters())
 
@@ -206,11 +222,18 @@ class ConfiguratorFootprintPlotter(object):
             conf_list[idx] = impute_inactive_values(c)
             conf_dict[str(conf_list[idx].get_array())] = X_scaled[idx, :]
 
+        print(conf_dict)
+        print(conf_list)
+
         X_trans = []
+        idx = 0
+        self.logger.warning(conf_dict)
         for x in X:
+            self.logger.warning(x)
             x_scaled_conf = conf_dict[str(x[:num_params])]
             # append scaled config + pca'ed features (total of 4 values) per config/feature-sample
             X_trans.append(np.concatenate((x_scaled_conf, x[num_params:]), axis=0))
+            idx += 1
         X_trans = np.array(X_trans)
 
         self.logger.debug("Train random forest for contour-plot.")
@@ -275,7 +298,7 @@ class ConfiguratorFootprintPlotter(object):
         start = time.time()
         for i in range(n_confs):
             for j in range(i + 1, n_confs):
-                dist = np.abs(conf_matrix[i, :] - conf_matrix[j, :])
+                dist = np.abs(conf_matrix[i, :] - conf_matrix[j, :])  # get distance between two
                 dist[np.isnan(dist)] = 1
                 dist[np.logical_and(is_cat, dist != 0)] = 1
                 dist /= depth
@@ -284,6 +307,50 @@ class ConfiguratorFootprintPlotter(object):
             if 5 < n_confs and i % (n_confs // 5) == 0:
                 self.logger.debug("%.2f%% of all distances calculated in %.2f seconds...", 100 * i / n_confs,
                                                                                          time.time() - start)
+
+        return dists
+
+    @timing
+    def get_distance_two(self, train_matrix, new_matrix, cs: ConfigurationSpace):
+        """
+        Computes the distance between all pairs of configurations.
+
+        Parameters
+        ----------
+        first_matrx: np.array
+            numpy array with cols as parameter values
+        cs: ConfigurationSpace
+            ConfigurationSpace to get conditionalities
+
+        Returns
+        -------
+        dists: np.array
+            np.array with distances between configurations i,j in dists[i,j] or dists[j,i]
+        """
+        self.logger.debug("Calculate distance between configurations.")
+        local_confs = new_matrix.shape[0]
+        random_confs = train_matrix.shape[0]
+        dists = np.zeros((local_confs, random_confs))
+
+        is_cat = []
+        depth = []
+        for _, param in cs._hyperparameters.items():
+            if type(param) == CategoricalHyperparameter:
+                is_cat.append(True)
+            else:
+                is_cat.append(False)
+            depth.append(self.get_depth(cs, param))
+        is_cat = np.array(is_cat)
+        depth = np.array(depth)
+
+        # TODO tqdm
+        for i in range(local_confs):
+            for j in range(random_confs):
+                dist = np.abs(train_matrix[j, :] - new_matrix[i, :])  # get distance between two
+                dist[np.isnan(dist)] = 1
+                dist[np.logical_and(is_cat, dist != 0)] = 1
+                dist /= depth
+                dists[i, j] = np.sum(dist)
 
         return dists
 
@@ -316,7 +383,7 @@ class ConfiguratorFootprintPlotter(object):
                     return d
 
     @timing
-    def get_mds(self, dists, random_dists, random_config, conf_matrix, rhs):
+    def get_mds(self, random_dists, train_and_new, combined):
         """
         Compute multi-dimensional scaling (using sklearn MDS) -- nonlinear scaling
 
@@ -324,6 +391,12 @@ class ConfiguratorFootprintPlotter(object):
         ----------
         dists: np.array
             full matrix of distances between all configurations
+
+        random_dists:
+            matrix of random distances
+
+        train_and_new:
+            matrix of local and random distances
 
         Returns
         -------
@@ -337,14 +410,32 @@ class ConfiguratorFootprintPlotter(object):
         # mds = MDS(n_components=2, dissimilarity="precomputed", random_state=12345)
         # dists = mds.fit_transform(dists)
 
-        mds = MDS_New(n_components=2, dissimilarity="precomputed", random_state=12345)
-        distances = mds.fit(random_dists)
-        test = mds.transform(dists, random_config, conf_matrix, rhs)
+        mds = MDS_New(n_components=2, dissimilarity="precomputed", random_state=12345, method='inductive')
 
-        # dists = mds.fit_transform(dists)  # train with random confis
-        self.logger.debug("MDS-stress: %f", mds.stress_)
+        mdss = MDS_New(n_components=2, dissimilarity="precomputed", random_state=12345)
 
-        return test
+        # dists = mds.fit_transform(random_dists, train_and_new)
+
+        dists = mdss.fit_transform(combined)
+
+        # mds.fit(random_dists)
+        # training_points = mds.transform(random_dists)
+
+        # new_traing_dists = mds.center_similarities(train_and_new, random_dists)
+
+        # Coordiantes of new points, but how to get old points?
+        # new_points = mds.transform(new_traing_dists)
+
+        # dists = np.vstack((training_points, new_points))
+
+        # test = mds.transform_wrong(dists, random_config, conf_matrix, rhs, depth, is_cat)
+
+        # Testcase
+        # mds_two = MDS_New(n_components=2, dissimilarity="precomputed", random_state=12345)
+        # dists_two = mds_two.fit_transform(combined)  # train with random confis
+        # self.logger.debug("MDS-stress: %f", mds.stress_)
+
+        return dists
 
     def reduce_runhistory(self,
                           rh: RunHistory,
@@ -385,7 +476,8 @@ class ConfiguratorFootprintPlotter(object):
             if c in keep:
                 new_rh.add(config=rh.ids_config[k.config_id],
                            cost=v.cost, time=v.time, status=v.status,
-                           instance_id=k.instance_id, seed=k.seed)
+                           instance_id=k.instance_id, seed=k.seed,
+                           additional_info=v.additional_info)  # added from Julia
         return new_rh
 
     @timing
