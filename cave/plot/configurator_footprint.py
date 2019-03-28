@@ -19,7 +19,6 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
 from bokeh.plotting import figure, ColumnDataSource
-from bokeh.embed import components
 from bokeh.models import HoverTool, ColorBar, LinearColorMapper, BasicTicker, CustomJS, Slider
 from bokeh.models.sources import CDSView
 from bokeh.models.filters import GroupFilter, BooleanFilter
@@ -199,7 +198,11 @@ class ConfiguratorFootprintPlotter(object):
 
         # impute missing values in configs and insert MDS'ed (2dim) configs to the right positions
         conf_dict = {}
+        # Remove forbidden clauses (this is necessary to enable the impute_inactive_values-method, see #226)
+        cs_no_forbidden = copy.deepcopy(conf_list[0].configuration_space)
+        cs_no_forbidden.forbidden_clauses = []
         for idx, c in enumerate(conf_list):
+            c.configuration_space = cs_no_forbidden
             conf_list[idx] = impute_inactive_values(c)
             conf_dict[str(conf_list[idx].get_array())] = X_scaled[idx, :]
 
@@ -269,6 +272,7 @@ class ConfiguratorFootprintPlotter(object):
         depth = np.array(depth)
 
         # TODO tqdm
+        start = time.time()
         for i in range(n_confs):
             for j in range(i + 1, n_confs):
                 dist = np.abs(conf_matrix[i, :] - conf_matrix[j, :])
@@ -278,7 +282,8 @@ class ConfiguratorFootprintPlotter(object):
                 dists[i, j] = np.sum(dist)
                 dists[j, i] = np.sum(dist)
             if 5 < n_confs and i % (n_confs // 5) == 0:
-                self.logger.debug("%.2f%% of all distances calculated...", 100 * i / n_confs)
+                self.logger.debug("%.2f%% of all distances calculated in %.2f seconds...", 100 * i / n_confs,
+                                                                                         time.time() - start)
 
         return dists
 
@@ -923,8 +928,6 @@ class ConfiguratorFootprintPlotter(object):
                                     widgetbox(select_none, width=100)),
                                 widgetbox(contour_title),
                                 widgetbox(contour_checkbox)))
-
-        script, div = components(layout)
 
         if self.output_dir:
             path = os.path.join(self.output_dir, "content/images/configurator_footprint.png")

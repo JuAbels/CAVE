@@ -1,8 +1,37 @@
+# 1.1.5
+
+## Bug fixes
+* Parallel Coordinates order now derived from parameter importance
+* Show all fANOVA pairwise plots
+* Fix bug in cost-over-time if run multiple times with same output-dir
+* Fix multiple bugs related to floats in Categoricals
+* Fix surface prediction in cfp when forbidden conditions
+* Fix path-spec error on loading SMAC-data
+* Sub-dict's were not generated in HTML-report sometimes
+* Parameters active in either def or inc are shown in comparison (before only active in def)
+
+## Minor changes
+* Add number of bohb-runs to meta-table
+* Make overflowing HTML-tables scrollable
+* Don't plot scatter or cdf if leq than one instance
+* Light changes in output-dir-structure
+* Evaluate all parameters in importance
+* Group cmd-line-args
+* 'Cost' instead of 'Quality' label in all plots
+* Redesign BOHB-lcs-plot to allow for 100+ iterations
+
 # 1.1.4
 
 ## Bug fixes
 
 * Enforcing smac version 0.10.0 to fix pcs-loading issues for booleans
+* Catch NaN-values from BOHB-results
+* Fix sorting-bug in pimp-table
+* Fix notebook-errors when executing cfp
+
+## Major changes
+* New version of the overview-table (with run-specific for every run)
+* Enable support for multiple BOHB-runs (just aggregating budgets across results)
 
 ## Minor changes
 
