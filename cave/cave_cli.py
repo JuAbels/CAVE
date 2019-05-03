@@ -147,6 +147,13 @@ class CaveCLI(object):
                                    "you run into a MemoryError). -1 -> plot all. ",
                               default=-1, type=int)
 
+        # Added from Julia for BA
+        cfp_opts.add_argument("--cfp_reduction_method",
+                              help="argument to determine with which reduction method the dimension reduction is"
+                                   "computed, choice of {smacof, classic, autoencoder}",
+                              default="classic", type=str.lower)
+
+
         pc_opts = parser.add_argument_group("Parallel Coordinates", "Finetune the parameter parallel coordinates")
         pc_opts.add_argument("--pc_sort_by",
                               help="parameter-importance method to determine the order (and selection) of parameters "
@@ -279,6 +286,8 @@ class CaveCLI(object):
         verbose_level = args_.verbose_level
         show_jupyter = args_.jupyter == 'on'
 
+        cfp_reduction_method = args_.cfp_reduction_method
+
         if file_format == 'BOHB':
             logging.getLogger().info("File format is BOHB, performing special nested analysis for budget-based optimizer!")
             validation_format = 'NONE'
@@ -313,6 +322,7 @@ class CaveCLI(object):
                      cfp_time_slider=cfp_time_slider,
                      cfp_max_plot=cfp_max_plot,
                      cfp_number_quantiles=cfp_number_quantiles,
+                     cfp_reduction_method=cfp_reduction_method,  # JULIA BA
                      parallel_coordinates=parallel_coordinates,
                      cost_over_time=cost_over_time,
                      algo_footprint=algorithm_footprints,

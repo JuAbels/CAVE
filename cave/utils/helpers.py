@@ -143,6 +143,23 @@ def combine_runhistories(rhs, logger=None):
         logger.debug("number of elements in combined rh: " + str(len(combi_rh.data)))
     return combi_rh
 
+def create_new_rhs(rhs, logger=None):
+    """Create correct rhs as list with correct combination of random configurations
+       and local configurations."""
+    new_rhs_list = []
+    rh_to_runs = {rh: list(rh.data.items()) for rh in rhs}
+    if logger:
+        logger.debug("number of elements: " + str({k: len(v) for k, v in rh_to_runs}))
+    for rh in rhs:
+        random, local = create_random_runhistories(rh)
+        combined = combine_random_local(random, local)
+        new_rhs_list.append(combined)
+    if logger:
+        logger.debug("number of elements in individual rhs: " + str({k : len(v) for k, v in rh_to_runs}))
+        logger.debug("number of elements in combined rh: " + str(len(new_rhs_list.data)))
+
+    return new_rhs_list
+
 def combine_random_local(rhs_random, rhs_local, logger=None):
     """Helpfunction to combine random and local runhistory to one"""
     combi_rh = rhs_random
@@ -157,7 +174,6 @@ def combine_random_local(rhs_random, rhs_local, logger=None):
         logger.debug("Combined Runhistory was created.")
 
     return combi_rh
-
 
 
 def create_random_runhistories(rhs):

@@ -184,7 +184,7 @@ class CAVE(object):
         self.output_dir_created = False
         self.set_verbosity(verbose_level.upper(), os.path.join(self.output_dir, "debug"))
         self.logger.debug("Running CAVE version %s", v)
-        self.logger.info("TEST JULES new")  # TEST For BA
+        self.logger.info("TEST JULES new MDS 03.05")  # TEST For BA
         self.show_jupyter = show_jupyter
         if self.show_jupyter:
             # Reset logging module
@@ -425,6 +425,7 @@ class CAVE(object):
                 cfp_time_slider=False,
                 cfp_max_plot=-1,
                 cfp_number_quantiles=10,
+                cfp_reduction_method="classic",
                 param_importance=['forward_selection', 'ablation', 'fanova'],
                 pimp_sort_table_by: str="average",
                 feature_analysis=["box_violin", "correlation", "importance", "clustering", "feature_cdf"],
@@ -519,7 +520,8 @@ class CAVE(object):
                                             run=None,
                                             use_timeslider=cfp_time_slider,
                                             max_confs=cfp_max_plot,
-                                            num_quantiles=cfp_number_quantiles)
+                                            num_quantiles=cfp_number_quantiles,
+                                            reduction_method=cfp_reduction_method)  # JULIA BA
                 self.website["Configurators Behavior"]["Configurator Footprint"]["tooltip"] = self._get_tooltip(self.configurator_footprint)
             if cost_over_time:
                 self.cost_over_time(d=self._get_dict(self.website["Configurators Behavior"], "Cost Over Time"), run=None)
@@ -554,7 +556,8 @@ class CAVE(object):
                 self.configurators_behavior(self.website["Configurators Behavior"], sub_sec,
                                             False,
                                             False, cfp_max_plot, cfp_time_slider, cfp_number_quantiles,
-                                            parallel_coordinates)
+                                            parallel_coordinates,
+                                            cfp_reduction_method)  # Julia BA
                 if self.feature_names:
                     self.feature_analysis(self.website["Feature Analysis"], sub_sec,
                                           box_violin='box_violin' in feature_analysis,
@@ -575,7 +578,8 @@ class CAVE(object):
             self.configurators_behavior(self.website["Configurators Behavior"], None,
                                         cost_over_time,
                                         cfp, cfp_max_plot, cfp_time_slider, cfp_number_quantiles,
-                                        parallel_coordinates)
+                                        parallel_coordinates,
+                                        cfp_reduction_method)  # Julia BA
             if self.feature_names:
                 self.feature_analysis(self.website["Feature Analysis"], None,
                                       box_violin='box_violin' in feature_analysis,
@@ -771,7 +775,7 @@ class CAVE(object):
 
     @_analyzer_type
     def configurator_footprint(self, cave,
-                               use_timeslider=False, max_confs=1000, num_quantiles=8):
+                               use_timeslider=False, max_confs=1000, num_quantiles=8, reduction_method="classic"):
         """
         Analysis of the iteratively sampled configurations during the optimization procedure.  Multi-dimensional scaling
         (MDS) is used to reduce dimensionality of the search space and plot the distribution of evaluated
@@ -801,7 +805,8 @@ class CAVE(object):
                  output_dir=cave.output_dir,
                  max_confs=max_confs,
                  use_timeslider=use_timeslider,
-                 num_quantiles=num_quantiles)
+                 num_quantiles=num_quantiles,
+                 reduction_method=reduction_method)  # Julia BA
 
     def configurators_behavior(self,
                                d,
@@ -811,14 +816,17 @@ class CAVE(object):
                                cfp_max_plot=-1,
                                cfp_time_slider=False,
                                cfp_number_quantiles=1,
-                               parallel_coordinates=False):
+                               parallel_coordinates=False,
+                               reduction_method="classic"):  # Julia BA
 
         if cost_over_time:
             self.cost_over_time(d=self._get_dict(d, "Cost Over Time", run=run), run=run)
             d["Cost Over Time"]["tooltip"] = self._get_tooltip(self.cost_over_time)
         if cfp:  # Configurator Footprint
             self.configurator_footprint(d=self._get_dict(d, "Configurator Footprint", run=run), run=run,
-                                        use_timeslider=cfp_time_slider, max_confs=cfp_max_plot, num_quantiles=cfp_number_quantiles)
+                                        use_timeslider=cfp_time_slider, max_confs=cfp_max_plot,
+                                        num_quantiles=cfp_number_quantiles,
+                                        reduction_method=reduction_method)  # Julia BA
             d["Configurator Footprint"]["tooltip"] = self._get_tooltip(self.configurator_footprint)
         if parallel_coordinates:
             # Should be after parameter importance, if performed.

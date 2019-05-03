@@ -24,6 +24,7 @@ class ConfiguratorFootprint(BaseAnalyzer):
                  use_timeslider=False,
                  num_quantiles=10,
                  timeslider_log: bool=True,
+                 reduction_method: str="classic"
                  ):
         """Plot the visualization of configurations, highlighting the
         incumbents. Using original rh, so the explored configspace can be
@@ -74,6 +75,8 @@ class ConfiguratorFootprint(BaseAnalyzer):
         self.num_quantiles = num_quantiles
         self.timeslider_log = timeslider_log
 
+        self.reduction_method = reduction_method
+
         if scenario.feature_array is None:
             scenario.feature_array = np.array([[]])
 
@@ -91,7 +94,8 @@ class ConfiguratorFootprint(BaseAnalyzer):
                        use_timeslider=self.use_timeslider and self.num_quantiles > 1,
                        num_quantiles=self.num_quantiles,
                        timeslider_log=self.timeslider_log,
-                       output_dir=self.output_dir)
+                       output_dir=self.output_dir,
+                       reduction_method=reduction_method)  # Julia BA
 
 
     def plot(self):
