@@ -18,8 +18,8 @@ def calculate_costvalue(dists, red_dists):
     costvalue = []
     for i in range(n_conf - 1):
         for j in range(i + 1, n_conf):
-            costvalue.append((dists[i][j] - low_dists[i][j]) ** 2)
-    costvalue = sum(costvalue)
+            costvalue.append(abs(dists[i][j] - low_dists[i][j]))
+    costvalue = sum(costvalue) / len(costvalue)
     return costvalue
 
 
@@ -136,16 +136,32 @@ class TestMdsMethods(unittest.TestCase):
 
     def test_distance_difference(self):
         """Test if the difference of original and embedding space calculated correclty"""
-        original = np.array([[0, 93, 82, 133],
+        original_old = np.array([[0, 93, 82, 133],
                              [93, 0, 52, 60],
                              [82, 52, 0, 111],
                              [133, 60, 111, 0]])
-        new_coordinates = np.array([[-62.831,  32.97448],
+        new_coordinates_old = np.array([[-62.831,  32.97448],
                                     [ 18.403, -12.02697],
                                     [-24.960, -39.71091],
                                     [ 69.388,  18.76340]])
 
+        original = np.array([[0, 1, 3, 5],
+                             [1, 0, 2, 1],
+                             [3, 2, 0, 3],
+                             [5, 1, 3, 0]])
+
+        new_coordinates = np.array([[2, 4],
+                                    [5, 8],
+                                    [2, 4],
+                                    [5, 8]])
+        res = np.array([[0, 5, 0, 5],
+                        [5, 0, 5, 0],
+                        [0, 5, 0, 5],
+                        [5, 0, 5, 0]])
+        euc = euclidean_distances(new_coordinates)
+        np.testing.assert_allclose(euc, res)
+
         result = calculate_costvalue(original, new_coordinates)
 
-        np.isclose(result, 0.518401)
+        self.assertEqual(result, 2.1666666666666665)
 

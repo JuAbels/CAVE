@@ -1,6 +1,7 @@
 import typing
 import numpy as np
 import logging
+import copy as cp
 
 from ConfigSpace.configuration_space import Configuration
 from smac.runhistory.runhistory import RunHistory, RunKey, DataOrigin
@@ -162,7 +163,9 @@ def create_new_rhs(rhs, logger=None):
 
 def combine_random_local(rhs_random, rhs_local, logger=None):
     """Helpfunction to combine random and local runhistory to one"""
-    combi_rh = rhs_random
+    combi_rh = cp.deepcopy(rhs_random)
+
+    test = combi_rh.data
 
     for new_configuration in rhs_local.data:
         combi_rh.add(rhs_local.ids_config[new_configuration[0]], rhs_local.data[new_configuration][0],
@@ -170,8 +173,15 @@ def combine_random_local(rhs_random, rhs_local, logger=None):
                      new_configuration[1], new_configuration[2], rhs_local.data[new_configuration][3],
                      rhs_local.external[new_configuration])
 
+        t = combi_rh.data
+
     if logger:
         logger.debug("Combined Runhistory was created.")
+
+    for ele in rhs_random.data:
+        assert (combi_rh.ids_config[ele[0]] == rhs_random.ids_config[ele[0]])
+    for ele in rhs_local.data:
+        assert (combi_rh.ids_config[ele[0] + len(rhs_random.ids_config)] == rhs_local.ids_config[ele[0]])
 
     return combi_rh
 
@@ -198,25 +208,31 @@ def create_random_runhistories(rhs):
 
     # Iterate above runhistory data and add random configurations in random_rh
     for objects in rhs.data:
+
         conf = get_config_origin(rhs.ids_config[objects[0]])
         if conf == 'Random':
             random_rh.add(rhs.ids_config[objects[0]], rhs.data[objects][0], rhs.data[objects][1],
                           rhs.data[objects][2], objects[1], objects[2], rhs.data[objects][3],
                           rhs.external[objects])
+
         else:
             local_rh.add(rhs.ids_config[objects[0]], rhs.data[objects][0], rhs.data[objects][1],
                          rhs.data[objects][2], objects[1], objects[2], rhs.data[objects][3],
                          rhs.external[objects])
+
     assert(len(random_rh.data) + len(local_rh.data) == len(rhs.data))
     return random_rh, local_rh
+
 
 class NotApplicableError(Exception):
     """Exception indicating that this analysis-method cannot be performed."""
     pass
 
+
 class MissingInstancesError(Exception):
     """Exception indicating that instances are missing."""
     pass
+
 
 def get_config_origin(c):
     """Return appropriate configuration origin

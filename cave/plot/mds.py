@@ -375,7 +375,8 @@ class MDS_BA(BaseEstimator):
         dists = np.vstack((training_points, new_points))
 
         if logger:
-            logger.info("New coordinates: %s" % (dists))
+            logger.info("Random coordinates: %s" % training_points)
+            logger.info("New coordinates: %s" % dists)
             logger.info("Finished with computation of new coordinates")
 
         return dists
@@ -441,6 +442,6 @@ class MDS_BA(BaseEstimator):
         '''
 
         e_projections = np.dot(new_similarities, np.dot(self.e_vecs_[:, :k],
-                                        np.diag(1/np.sqrt(self.e_vals_[:k]))))
+                                                        np.diag(1/np.sqrt(self.e_vals_[:k]))))
 
         return e_projections
