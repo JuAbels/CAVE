@@ -9,6 +9,7 @@ Done as Undergraduate Thesis. Adopted by scikit-learn.
 import numpy as np
 from numpy import linalg as la
 import warnings
+import time
 from sklearn.base import BaseEstimator
 from sklearn.metrics import euclidean_distances
 from sklearn.utils import check_array
@@ -354,30 +355,43 @@ class MDS_BA(BaseEstimator):
             Coordinates of embedding of random and local configurations.
         """
         # Make fitting with distances of random configurations
+        if logger:
+            logger.info("Start with fitting of %s random configurations." % X_train.shape[0])
         self.fit(X_train)
+        start = time.time()
 
         # Transform the random configurations to two dimensions with eigenvectors and eigenvalues
         training_points = self.embedding(2)
+        training_points_new = self.transform(X_train)
+        test = self.center_similarities(X_train, X_train)
+        new_test = self.transform(test)
+        if logger:
+            logger.info("New coordinates with embedding e*sqrt(lamda): \n %s" % training_points)
+            logger.info("New coordinates with embedding e*(1/sqrt(lamda)): \n %s" % training_points_new)
+            logger.info("Transformation of random configurations in embedding space with bengio method: \n %s"
+                        % new_test)
 
         if X_new is None:
             if logger:
                 logger.info("Only calculated embedding of random configurations, without extending points")
-                logger.info("New coordinates: %s" % (training_points))
+                logger.info("New coordinates: %s" % training_points)
                 logger.info("Finished with computation of new coordinates")
+                logger.debug("Fitting needed %.2f seconds." % (time.time() - start))
             return training_points
 
         # Calculate center similarities of local and random distance matrix
-        new_traing_dists = self.center_similarities(X_new, X_train, logger=logger)
+        new_training_dists = self.center_similarities(X_new, X_train, logger=logger)
 
         # Transform the new points down in embedding space
-        new_points = self.transform(new_traing_dists)
+        new_points = self.transform(new_training_dists)
 
         dists = np.vstack((training_points, new_points))
 
         if logger:
-            logger.info("Random coordinates: %s" % training_points)
-            logger.info("New coordinates: %s" % dists)
+            logger.info("%s Random coordinates: \n %s" % (training_points.shape[0], training_points))
+            logger.info("New coordinates: \n %s" % dists)
             logger.info("Finished with computation of new coordinates")
+            logger.debug("Transformation needed %.2f seconds." % (time.time() - start))
 
         return dists
 

@@ -12,6 +12,7 @@ import inspect
 import logging
 import copy
 import time
+import pickle  # Julia BA
 
 import numpy as np
 # from sklearn.manifold.mds import MDS
@@ -45,6 +46,9 @@ from cave.utils.timing import timing
 from cave.utils.io import export_bokeh
 from cave.plot.mds import MDS_BA
 from sklearn.metrics import euclidean_distances
+
+
+from tempfile import TemporaryFile
 
 from cave.utils.bokeh_routines import get_checkbox, get_radiobuttongroup
 
@@ -110,16 +114,16 @@ class ConfiguratorFootprintPlotter(object):
         self.random_rh, self.local_rh = create_random_runhistories(self.combined_rh_)  # Julia BA -> need for get_mds
 
         # create correct combined rh with firstly the random configurations and then residual confis
-        # self.combined_rh = combine_random_local(self.random_rh, self.local_rh, self.logger)
-        # self.rhs = create_new_rhs(self.rhs_)  # for creating new rhs with correct combination
+        self.combined_rh = combine_random_local(self.random_rh, self.local_rh, self.logger)
+        self.rhs = create_new_rhs(self.rhs_)  # for creating new rhs with correct combination
 
         # Case for only random Configurations
-        self.rhs = []
-        for i in self.rhs_:
-           random, local = create_random_runhistories(i)
-           self.rhs.append(random)
-        self.combined_rh = self.random_rh
-        self.local_rh = self.random_rh
+        # self.rhs = []
+        # for i in self.rhs_:
+        #    random, local = create_random_runhistories(i)
+        #    self.rhs.append(random)
+        # self.combined_rh = self.random_rh
+        # self.local_rh = self.random_rh
 
         for ele in self.random_rh.data:
             assert(self.combined_rh.ids_config[ele[0]] == self.random_rh.ids_config[ele[0]])
@@ -147,24 +151,39 @@ class ConfiguratorFootprintPlotter(object):
         """
         default = self.scenario.cs.get_default_configuration()
 
+        self.logger.info("Length Combined RH: \n %s" % len(self.combined_rh.data))
+
         self.combined_rh = self.reduce_runhistory(self.combined_rh, self.max_plot, keep=[a for b in self.incs for a in b]+[default])
 
+        self.logger.info("Length Combined RH: \n %s" % len(self.combined_rh.data))
+
+        if len(self.combined_rh.data) < len(self.combined_rh_.data):
+            self.random_rh, self.local_rh = create_random_runhistories(self.combined_rh)
+            number = len(self.random_rh.get_all_configs_combined())
+
+            # Test if local and random rh have same combination as combined
+            for ele in range(number):
+                assert(self.random_rh.get_all_configs_combined()[ele] == self.combined_rh.get_all_configs_combined()[ele])
+            for ele in range(len(self.local_rh.get_all_configs_combined())):
+                assert (self.local_rh.get_all_configs_combined()[ele] == self.combined_rh.get_all_configs_combined()[ele+number])
+
         # Julia BA
-        # conf_matrix, conf_list, runs_per_quantile, timeslider_labels = self.get_conf_matrix(self.combined_rh, self.incs)
+        conf_matrix, conf_list, runs_per_quantile, timeslider_labels, rand_index = self.get_conf_matrix(self.combined_rh, self.incs)
+
         # conf_matrix_random, conf_matrix_local = self.get_conf_matrix_random_local(self.random_rh, self.local_rh, self.incs) # list_for_configuration)
-        conf_matrix, conf_list, runs_per_quantile, timeslider_labels = self.get_conf_matrix(self.combined_rh, [])
-        conf_matrix_random, conf_matrix_local = self.get_conf_matrix_random_local(self.random_rh, self.local_rh, []) # list_for_configuration)
+
+        # np.savetxt("matrix.txt", conf_matrix)
 
         self.logger.info("Runs per quantile: %s" % runs_per_quantile)
         self.logger.debug("Number of Configurations: %d", conf_matrix.shape[0])
-        self.logger.debug("Number of random Configurations: %d", conf_matrix_random.shape[0])
-        self.logger.debug("Number of local Configurations: %d", conf_matrix_local.shape[0])
+        self.logger.debug("Number of random Configurations: %d", rand_index)
 
         dists = self.get_distance(conf_matrix, self.scenario.cs)
         red_dists = self.call_method(method=self.reduction_method,
                                      combined=dists,
-                                     conf_matrix_random=conf_matrix_random,
-                                     conf_matrix_local=conf_matrix_local)
+                                     rand_confis=rand_index)
+                                     # rand_confis=len(conf_matrix))
+        assert(conf_matrix.shape[0] == red_dists.shape[0])
 
         cost_value = self.calculate_costvalue(dists, red_dists)
         self.logger.info("Calculate costvalue of distances in high and low dimensional: %f" % cost_value)
@@ -178,7 +197,7 @@ class ConfiguratorFootprintPlotter(object):
 
         for label, rh in zip(self.rh_labels, self.rhs):
             self.logger.info("Call of get_pred_surface")
-            self.logger.warning(rh.data)
+            # self.logger.warning(rh.data)
             contour_data[label] = self.get_pred_surface(rh, X_scaled=red_dists,
                                                         conf_list=copy.deepcopy(conf_list),
                                                         contour_step_size=self.contour_step_size)
@@ -195,9 +214,10 @@ class ConfiguratorFootprintPlotter(object):
 
     def call_method(self,
                     method,
-                    combined=None,
-                    conf_matrix_random=None,
-                    conf_matrix_local=None):
+                    rand_confis,
+                    combined=None):
+                    #conf_matrix_random=None,
+                    #conf_matrix_local=None):
         """
         Helpfunction to call mds with the selected method.
 
@@ -221,9 +241,9 @@ class ConfiguratorFootprintPlotter(object):
             return self.get_mds(combined=combined, classical_method=False, logger=self.logger)
         # TODO elif method == "autoencoder"
 
-        random_dists = self.get_distance(conf_matrix_random, self.scenario.cs)
-        # train_new_dists = self.get_distance_random_new(conf_matrix_random, conf_matrix_local, self.scenario.cs)
-        train_new_dists = None
+        random_dists = combined[:rand_confis, :rand_confis]  # self.get_distance(conf_matrix_random, self.scenario.cs)
+        train_new_dists = combined[rand_confis:, :rand_confis]  # self.get_distance_random_new(conf_matrix_random, conf_matrix_local, self.scenario.cs)
+        # train_new_dists = None
         return self.get_mds(combined=combined, random_dists=random_dists,
                             train_and_new=train_new_dists, classical_method=True, logger=self.logger)
 
@@ -286,12 +306,7 @@ class ConfiguratorFootprintPlotter(object):
 
         X_trans = []
         idx = 0
-        self.logger.info("Print conf_dict")
-        self.logger.warning(conf_dict)
         for x in X:
-            self.logger.info("Print x of X")
-            self.logger.warning(idx)
-            self.logger.warning(x)
             x_scaled_conf = conf_dict[str(x[:num_params])]
             # append scaled config + pca'ed features (total of 4 values) per config/feature-sample
             X_trans.append(np.concatenate((x_scaled_conf, x[num_params:]), axis=0))
@@ -454,31 +469,24 @@ class ConfiguratorFootprintPlotter(object):
 
             costvalues = sum_i sum_j=i+1 (distance_low_space_ij - distance_high_space_ij)
         """
-        # calculate distance matrix of low dimensional space matrix
-        # n_confs = red_dists.shape[0]
-
-        # low_dists = np.zeros((n_confs, n_confs))
-
-        # for i in range(n_confs):
-        #    for j in range(i + 1, n_confs):
-        #        dist = np.abs(red_dists[i, :] - red_dists[j, :])  # get distance between two
-        #        low_dists[i, j] = np.sum(dist)
-        #        low_dists[j, i] = np.sum(dist)
-
         n_conf = dists.shape[0]
         low_dists = euclidean_distances(red_dists)
         costvalue = []
+        mean_actual = []
 
         self.logger.info("Low_distances: \n %s" % low_dists)
 
         for i in range(n_conf - 1):
             for j in range(i+1, n_conf):
-                costvalue.append(abs(dists[i][j] - low_dists[i][j]))
+                costvalue.append((dists[i][j] - low_dists[i][j])**2)
+                mean_actual.append(low_dists[i][j])
 
-        test = costvalue
-        nenner = sum(costvalue)
-        zähler = len(costvalue)
-        result = nenner/zähler
+        mean_actual_value = sum(mean_actual) / len(mean_actual)
+        actual = [(mean_actual_value - dif)**2 for dif in mean_actual]
+        pred_actual = sum(costvalue)
+        rse = pred_actual / sum(actual)
+
+        self.logger.info("Costvalue calculated with RSE: %s" % rse)
 
         costvalue = sum(costvalue) / len(costvalue)
 
@@ -565,6 +573,8 @@ class ConfiguratorFootprintPlotter(object):
         #   available, train on randomly sampled configs and plot all
         # TODO MDS provides 'n_jobs'-argument for parallel computing...
 
+        self.logger.info("Start Multidimensional Scaling.")
+
         if classical_method is False:
 
             self.logger.info("Perform Multidimesnional Scaling with SMACOF-Algorithm")
@@ -579,7 +589,6 @@ class ConfiguratorFootprintPlotter(object):
         mds = MDS_BA(n_components=2, dissimilarity="precomputed", random_state=12345, method='inductive')
 
         dists = mds.fit_transform(random_dists, train_and_new, logger=logger)
-        self.logger.warning(dists)
         self.logger.info("Dimension of embedding space: %s" % (dists.shape[0]))
 
         return dists
@@ -606,9 +615,13 @@ class ConfiguratorFootprintPlotter(object):
             reduced runhistory
         """
         configs = rh.get_all_configs_combined()  # Julia BA
+        self.logger.info("MAX_configs: %s" % max_configs)
+        self.logger.info("len configs: %s" % len(configs))
         if max_configs <= 0 or max_configs > len(configs):  # keep all
+            self.logger.info("Not calling function reduce runhistory")
             return rh
 
+        self.logger.info("calling function reduce runhistory")
         runs = [(c, len(rh.get_runs_for_config(c))) for c in configs]
         if not keep:
             keep = []
@@ -663,9 +676,21 @@ class ConfiguratorFootprintPlotter(object):
                 conf_matrix.append(c.get_array())
                 conf_list.append(c)
 
+        # for inc in [a for b in incs for a in b]:
+            # if inc not in conf_list:
+                # conf_matrix.append(inc.get_array())
+                # conf_list.append(inc)
+
+        # Julia BA
+        index = len(self.random_rh.get_all_configs_combined())
         for inc in [a for b in incs for a in b]:
             if inc not in conf_list:
-                conf_matrix.append(inc.get_array())
+                origin = get_config_origin(inc)
+                if origin == "Random":
+                    conf_matrix.insert(index, inc.get_array())
+                    index += 1
+                else:
+                    conf_matrix.append(inc.get_array())
                 conf_list.append(inc)
 
         # Sanity check, number quantiles must be smaller than the number of configs
@@ -688,7 +713,7 @@ class ConfiguratorFootprintPlotter(object):
         self.logger.debug("Gathered %d configurations from 1 runhistories." % len(conf_list))
 
         runs_per_quantile = np.array([np.array(run) for run in runs_per_quantile])
-        return np.array(conf_matrix), np.array(conf_list), runs_per_quantile, labels
+        return np.array(conf_matrix), np.array(conf_list), runs_per_quantile, labels, index
 
     @timing
     def get_conf_matrix_random_local(self, rh_radom, rh_local, incs):

@@ -184,7 +184,7 @@ class CAVE(object):
         self.output_dir_created = False
         self.set_verbosity(verbose_level.upper(), os.path.join(self.output_dir, "debug"))
         self.logger.debug("Running CAVE version %s", v)
-        self.logger.info("TEST JULES new MDS 08.05")  # TEST For BA
+        self.logger.info("TEST JULES new MDS 17.05")  # TEST For BA
         self.show_jupyter = show_jupyter
         if self.show_jupyter:
             # Reset logging module
