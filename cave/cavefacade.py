@@ -179,12 +179,12 @@ class CAVE(object):
         verbose_level: str
             from [OFF, INFO, DEBUG, DEV_DEBUG and WARNING]
         """
-        self.logger = logging.getLogger(self.__module__ + '.' + self.__class__.__name__)
-        self.output_dir = output_dir
-        self.output_dir_created = False
-        self.set_verbosity(verbose_level.upper(), os.path.join(self.output_dir, "debug"))
-        self.logger.debug("Running CAVE version %s", v)
-        self.logger.info("TEST JULES new MDS 17.05")  # TEST For BA
+        # self.logger = logging.getLogger(self.__module__ + '.' + self.__class__.__name__)
+        # self.output_dir = output_dir
+        # self.output_dir_created = False
+        # self.set_verbosity(verbose_level.upper(), os.path.join(self.output_dir, "debug"))
+        # self.logger.debug("Running CAVE version %s", v)
+        # self.logger.info("TEST JULES new MDS 17.05")  # TEST For BA
 
         self.show_jupyter = show_jupyter
         if self.show_jupyter:
@@ -201,6 +201,7 @@ class CAVE(object):
         self._create_outputdir(self.output_dir)
 
         self.logger.debug("Running CAVE version %s", v)
+        self.logger.info("TEST JULES new MDS 17.05")  # TEST For BA
 
         # Methods that are never per-run, because they are inter-run-analysis by nature
         self.always_aggregated = ['bohb_learning_curves', 'bohb_incumbents_per_budget', 'configurator_footprint',
