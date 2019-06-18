@@ -1,0 +1,841 @@
+{
+  "json_format_version": 0.1,
+  "forbiddens": [],
+  "hyperparameters": [
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "default": "0",
+      "name": "barrier_algorithm"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2"
+      ],
+      "default": "0",
+      "name": "barrier_crossover"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "4",
+        "16",
+        "64"
+      ],
+      "default": "-1",
+      "name": "barrier_limits_corrections"
+    },
+    {
+      "upper": 100000000000000.0,
+      "name": "barrier_limits_growth",
+      "type": "uniform_float",
+      "log": true,
+      "default": 1000000000000.0,
+      "lower": 1000000.0
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "default": "0",
+      "name": "barrier_ordering"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "default": "1",
+      "name": "barrier_startalg"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "no"
+      ],
+      "default": "no",
+      "name": "emphasis_memory"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "default": "0",
+      "name": "emphasis_mip"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "yes",
+        "no"
+      ],
+      "default": "no",
+      "name": "emphasis_numerical"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "default": "0",
+      "name": "feasopt_mode"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6"
+      ],
+      "default": "0",
+      "name": "lpmethod"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "default": "0",
+      "name": "mip_cuts_cliques"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "default": "0",
+      "name": "mip_cuts_covers"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "default": "0",
+      "name": "mip_cuts_disjunctive"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2"
+      ],
+      "default": "0",
+      "name": "mip_cuts_flowcovers"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2"
+      ],
+      "default": "0",
+      "name": "mip_cuts_gomory"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2"
+      ],
+      "default": "0",
+      "name": "mip_cuts_gubcovers"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2"
+      ],
+      "default": "0",
+      "name": "mip_cuts_implied"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2"
+      ],
+      "default": "0",
+      "name": "mip_cuts_mcfcut"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2"
+      ],
+      "default": "0",
+      "name": "mip_cuts_mircut"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2"
+      ],
+      "default": "0",
+      "name": "mip_cuts_pathcut"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2"
+      ],
+      "default": "0",
+      "name": "mip_cuts_zerohalfcut"
+    },
+    {
+      "upper": 10,
+      "name": "mip_limits_aggforcut",
+      "type": "uniform_int",
+      "log": false,
+      "default": 3,
+      "lower": 0
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "4",
+        "16",
+        "64"
+      ],
+      "default": "0",
+      "name": "mip_limits_cutpasses"
+    },
+    {
+      "upper": 16.0,
+      "name": "mip_limits_cutsfactor",
+      "type": "uniform_float",
+      "log": true,
+      "default": 4.0,
+      "lower": 1.0
+    },
+    {
+      "upper": 800,
+      "name": "mip_limits_gomorycand",
+      "type": "uniform_int",
+      "log": true,
+      "default": 200,
+      "lower": 50
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "4",
+        "16",
+        "64"
+      ],
+      "default": "0",
+      "name": "mip_limits_gomorypass"
+    },
+    {
+      "upper": 2000,
+      "name": "mip_limits_submipnodelim",
+      "type": "uniform_int",
+      "log": true,
+      "default": 500,
+      "lower": 125
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "default": "0",
+      "name": "mip_ordertype"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0.9",
+        "0.99",
+        "0.999",
+        "0.9999",
+        "0.99999",
+        "0.999999"
+      ],
+      "default": "0.9999",
+      "name": "mip_strategy_backtrack"
+    },
+    {
+      "upper": 1000,
+      "name": "mip_strategy_bbinterval",
+      "type": "uniform_int",
+      "log": true,
+      "default": 7,
+      "lower": 1
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1"
+      ],
+      "default": "0",
+      "name": "mip_strategy_branch"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "default": "0",
+      "name": "mip_strategy_dive"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1"
+      ],
+      "default": "1",
+      "name": "mip_strategy_file"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2"
+      ],
+      "default": "0",
+      "name": "mip_strategy_fpheur"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "5",
+        "10",
+        "20",
+        "40",
+        "80"
+      ],
+      "default": "0",
+      "name": "mip_strategy_heuristicfreq"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "yes",
+        "no"
+      ],
+      "default": "no",
+      "name": "mip_strategy_lbheur"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "default": "1",
+      "name": "mip_strategy_nodeselect"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2"
+      ],
+      "default": "0",
+      "name": "mip_strategy_presolvenode"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "default": "0",
+      "name": "mip_strategy_probe"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "5",
+        "10",
+        "20",
+        "40",
+        "80"
+      ],
+      "default": "0",
+      "name": "mip_strategy_rinsheur"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "2"
+      ],
+      "default": "0",
+      "name": "mip_strategy_search"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6"
+      ],
+      "default": "0",
+      "name": "mip_strategy_startalgorithm"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "default": "0",
+      "name": "mip_strategy_subalgorithm"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "default": "0",
+      "name": "mip_strategy_variableselect"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "1",
+        "2",
+        "3"
+      ],
+      "default": "2",
+      "name": "network_netfind"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "2"
+      ],
+      "default": "0",
+      "name": "network_pricing"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "4",
+        "16",
+        "64"
+      ],
+      "default": "-1",
+      "name": "preprocessing_aggregator"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1"
+      ],
+      "default": "-1",
+      "name": "preprocessing_boundstrength"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "2"
+      ],
+      "default": "2",
+      "name": "preprocessing_coeffreduce"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "default": "-1",
+      "name": "preprocessing_dependency"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1"
+      ],
+      "default": "0",
+      "name": "preprocessing_dual"
+    },
+    {
+      "upper": 40,
+      "name": "preprocessing_fill",
+      "type": "uniform_int",
+      "log": true,
+      "default": 10,
+      "lower": 2
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1"
+      ],
+      "default": "1",
+      "name": "preprocessing_linear"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "4",
+        "16",
+        "64"
+      ],
+      "default": "-1",
+      "name": "preprocessing_numpass"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "default": "3",
+      "name": "preprocessing_reduce"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1"
+      ],
+      "default": "-1",
+      "name": "preprocessing_relax"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "default": "-1",
+      "name": "preprocessing_repeatpresolve"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "default": "-1",
+      "name": "preprocessing_symmetry"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1"
+      ],
+      "default": "0",
+      "name": "read_scale"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "default": "0",
+      "name": "sifting_algorithm"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1"
+      ],
+      "default": "1",
+      "name": "simplex_crash"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "default": "0",
+      "name": "simplex_dgradient"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "4",
+        "16",
+        "64"
+      ],
+      "default": "0",
+      "name": "simplex_limits_perturbation"
+    },
+    {
+      "upper": 40,
+      "name": "simplex_limits_singularity",
+      "type": "uniform_int",
+      "log": true,
+      "default": 10,
+      "lower": 2
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "no",
+        "yes"
+      ],
+      "default": "no",
+      "name": "simplex_perturbation_switch"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "-1",
+        "0",
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "default": "0",
+      "name": "simplex_pgradient"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "4",
+        "16",
+        "64"
+      ],
+      "default": "0",
+      "name": "simplex_pricing"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "4",
+        "16",
+        "64",
+        "256"
+      ],
+      "default": "0",
+      "name": "simplex_refactor"
+    },
+    {
+      "upper": 0.5,
+      "name": "simplex_tolerances_markowitz",
+      "type": "uniform_float",
+      "log": true,
+      "default": 0.01,
+      "lower": 0.0001
+    },
+    {
+      "upper": 40,
+      "name": "mip_limits_strongcand",
+      "type": "uniform_int",
+      "log": true,
+      "default": 10,
+      "lower": 2
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "0",
+        "1",
+        "4",
+        "16",
+        "64"
+      ],
+      "default": "0",
+      "name": "mip_limits_strongit"
+    },
+    {
+      "type": "categorical",
+      "choices": [
+        "yes",
+        "no"
+      ],
+      "default": "yes",
+      "name": "mip_strategy_order"
+    },
+    {
+      "upper": 0.0001,
+      "name": "perturbation_constant",
+      "type": "uniform_float",
+      "log": true,
+      "default": 1e-06,
+      "lower": 1e-08
+    }
+  ],
+  "python_module_version": "0.4.7",
+  "conditions": [
+    {
+      "type": "IN",
+      "values": [
+        "1",
+        "2",
+        "3"
+      ],
+      "parent": "mip_ordertype",
+      "child": "mip_strategy_order"
+    },
+    {
+      "type": "EQ",
+      "parent": "mip_strategy_variableselect",
+      "child": "mip_limits_strongcand",
+      "value": "3"
+    },
+    {
+      "type": "EQ",
+      "parent": "mip_strategy_variableselect",
+      "child": "mip_limits_strongit",
+      "value": "3"
+    },
+    {
+      "type": "EQ",
+      "parent": "simplex_perturbation_switch",
+      "child": "perturbation_constant",
+      "value": "yes"
+    }
+  ]
+}
