@@ -201,7 +201,7 @@ class CAVE(object):
         self._create_outputdir(self.output_dir)
 
         self.logger.debug("Running CAVE version %s", v)
-        self.logger.info("TEST JULES new MDS 17.05")  # TEST For BA
+        self.logger.info("TEST JULES new MDS 29.05")  # TEST For BA
 
         # Methods that are never per-run, because they are inter-run-analysis by nature
         self.always_aggregated = ['bohb_learning_curves', 'bohb_incumbents_per_budget', 'configurator_footprint',

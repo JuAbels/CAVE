@@ -209,6 +209,8 @@ def create_random_runhistories(rhs):
     # Iterate above runhistory data and add random configurations in random_rh
     for objects in rhs.data:
 
+        test = rhs.ids_config[objects[0]]
+
         conf = get_config_origin(rhs.ids_config[objects[0]])
         if conf == 'Random':
             random_rh.add(rhs.ids_config[objects[0]], rhs.data[objects][0], rhs.data[objects][1],

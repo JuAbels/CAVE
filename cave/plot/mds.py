@@ -450,11 +450,12 @@ class MDS_BA(BaseEstimator):
         
         for i in range(len(new_similarities)):
             for j in range(k):
+                test1 = new_similarities[i]
+                test = np.dot(self.e_vecs_[:, j], new_similarities[i])
                 e_projections[i, j] = ((np.dot(self.e_vecs_[:, j],
                                                new_similarities[i]) /
                                         np.sqrt(self.e_vals_[j])))
         '''
-
         e_projections = np.dot(new_similarities, np.dot(self.e_vecs_[:, :k],
                                                         np.diag(1/np.sqrt(self.e_vals_[:k]))))
 

@@ -12,7 +12,7 @@ import inspect
 import logging
 import copy
 import time
-import pickle  # Julia BA
+from math import sqrt
 
 import numpy as np
 # from sklearn.manifold.mds import MDS
@@ -151,16 +151,15 @@ class ConfiguratorFootprintPlotter(object):
         """
         default = self.scenario.cs.get_default_configuration()
 
-        self.logger.info("Length Combined RH: \n %s" % len(self.combined_rh.data))
-
-        self.combined_rh = self.reduce_runhistory(self.combined_rh, self.max_plot, keep=[a for b in self.incs for a in b]+[default])
-
-        self.logger.info("Length Combined RH: \n %s" % len(self.combined_rh.data))
+        self.logger.info("Number of configurations: %s" % len(self.combined_rh.config_ids))
+        # self.combined_rh = self.reduce_runhistory(self.combined_rh, self.max_plot, keep=[a for b in self.incs for a in b]+[default])
+        self.combined_rh = self.reduce_runhistory(self.combined_rh, 1000**2,
+                                                  keep=[a for b in self.incs for a in b] + [default])
+        self.logger.info("Number of configurations: %s" % len(self.combined_rh.config_ids))
 
         if len(self.combined_rh.data) < len(self.combined_rh_.data):
             self.random_rh, self.local_rh = create_random_runhistories(self.combined_rh)
             number = len(self.random_rh.get_all_configs_combined())
-
             # Test if local and random rh have same combination as combined
             for ele in range(number):
                 assert(self.random_rh.get_all_configs_combined()[ele] == self.combined_rh.get_all_configs_combined()[ele])
@@ -169,22 +168,15 @@ class ConfiguratorFootprintPlotter(object):
 
         # Julia BA
         conf_matrix, conf_list, runs_per_quantile, timeslider_labels, rand_index = self.get_conf_matrix(self.combined_rh, self.incs)
-
-        # conf_matrix_random, conf_matrix_local = self.get_conf_matrix_random_local(self.random_rh, self.local_rh, self.incs) # list_for_configuration)
-
-        # np.savetxt("matrix.txt", conf_matrix)
-
-        self.logger.info("Runs per quantile: %s" % runs_per_quantile)
-        self.logger.debug("Number of Configurations: %d", conf_matrix.shape[0])
-        self.logger.debug("Number of random Configurations: %d", rand_index)
+        # np.savetxt("matrix_cplex.txt", conf_matrix)
 
         dists = self.get_distance(conf_matrix, self.scenario.cs)
         red_dists = self.call_method(method=self.reduction_method,
                                      combined=dists,
                                      rand_confis=rand_index)
                                      # rand_confis=len(conf_matrix))
-        assert(conf_matrix.shape[0] == red_dists.shape[0])
 
+        assert(conf_matrix.shape[0] == red_dists.shape[0])
         cost_value = self.calculate_costvalue(dists, red_dists)
         self.logger.info("Calculate costvalue of distances in high and low dimensional: %f" % cost_value)
 
@@ -200,14 +192,13 @@ class ConfiguratorFootprintPlotter(object):
                                                              contour_step_size=self.contour_step_size)
         for label, rh in zip(self.rh_labels, self.rhs):
             self.logger.info("Call of get_pred_surface")
-            # self.logger.warning(rh.data)
             contour_data[label] = self.get_pred_surface(rh, X_scaled=red_dists,
                                                         conf_list=copy.deepcopy(conf_list),
                                                         contour_step_size=self.contour_step_size)
 
         print("Finished label rh")
 
-        return self.plot(red_dists,  # Coordiantes of 2D Configurations
+        return self.plot(red_dists,
                          conf_list,
                          runs_per_quantile,
                          inc_list=self.incs,
@@ -244,9 +235,8 @@ class ConfiguratorFootprintPlotter(object):
             return self.get_mds(combined=combined, classical_method=False, logger=self.logger)
         # TODO elif method == "autoencoder"
 
-        random_dists = combined[:rand_confis, :rand_confis]  # self.get_distance(conf_matrix_random, self.scenario.cs)
-        train_new_dists = combined[rand_confis:, :rand_confis]  # self.get_distance_random_new(conf_matrix_random, conf_matrix_local, self.scenario.cs)
-        # train_new_dists = None
+        random_dists = combined[:rand_confis, :rand_confis]
+        train_new_dists = combined[rand_confis:, :rand_confis]
         return self.get_mds(combined=combined, random_dists=random_dists,
                             train_and_new=train_new_dists, classical_method=True, logger=self.logger)
 
@@ -389,7 +379,12 @@ class ConfiguratorFootprintPlotter(object):
                     dist[index] = 1
 
                 dist[np.logical_and(is_cat, dist != 0)] = 1
-                dist = np.sum(dist / depth)
+
+                dist = np.square(dist/depth)              # TODO: Get_distance methodic
+                dist = sqrt(np.sum(dist))
+
+                print(dist)
+                # dist = np.sum(dist / depth)
                 dists[i, j] = dist
                 dists[j, i] = dist
             if 5 < n_confs and i % (n_confs // 5) == 0:
